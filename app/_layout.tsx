@@ -34,6 +34,7 @@ export default function RootLayout() {
       await ScreenOrientation.lockAsync(
         ScreenOrientation.OrientationLock.LANDSCAPE
       );
+      await SplashScreen.hideAsync();
     }
     lockOrientation();
 

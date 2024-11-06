@@ -5,7 +5,8 @@ import {
   ErrorToast,
   BaseToastProps,
 } from "react-native-toast-message";
-import { CheckCircle, XCircle, Info } from "lucide-react-native";
+// import { CheckCircle, XCircle, Info } from "lucide-react-native";
+import { Ionicons } from "@expo/vector-icons";
 
 export const toastConfig = {
   success: (props: BaseToastProps) => (
@@ -18,7 +19,7 @@ export const toastConfig = {
       text2Style={styles.message}
       renderLeadingIcon={() => (
         <View style={styles.iconContainer}>
-          <CheckCircle color="#ffffff" size={24} />
+          <Ionicons name="checkmark-circle" size={24} color="#ffffff" />
         </View>
       )}
     />
@@ -33,7 +34,7 @@ export const toastConfig = {
       text2Style={styles.message}
       renderLeadingIcon={() => (
         <View style={styles.iconContainer}>
-          <XCircle color="#ffffff" size={24} />
+          <Ionicons name="close-circle" size={24} color="#ffffff" />
         </View>
       )}
     />
@@ -48,7 +49,8 @@ export const toastConfig = {
       text2Style={styles.message}
       renderLeadingIcon={() => (
         <View style={styles.iconContainer}>
-          <Info color="#ffffff" size={24} />
+          {/* <Info color="#ffffff" size={24} /> */}
+          <Ionicons name="information-circle" size={24} color="#ffffff" />
         </View>
       )}
     />

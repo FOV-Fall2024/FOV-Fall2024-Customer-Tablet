@@ -17,10 +17,11 @@
       "requireFullScreen": true
     },
     "android": {
+      "permissions": ["INTERNET"],
+      "usesCleartextTraffic": true,
       "networkSecurityConfig": {
         "clearTextPermitted": true
       },
-      "permissions": ["INTERNET"],
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -38,6 +39,14 @@
         "expo-screen-orientation",
         {
           "initialOrientation": "LANDSCAPE"
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
         }
       ]
     ],

@@ -13,6 +13,10 @@ import { useColorScheme } from "@/hooks/useColorScheme";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import * as ScreenOrientation from "expo-screen-orientation";
 import { StatusBar } from "expo-status-bar";
+import Toast, { ToastConfigParams } from "react-native-toast-message";
+import { Text, View } from "react-native";
+import { toastConfig } from "@/components/ToastConfig";
+import { SignalrProvider } from "@/context";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -52,12 +56,16 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="index" />
-          <Stack.Screen name="home" />
-          <Stack.Screen name="food/[id]" options={{ headerShown: true }} />
-        </Stack>
-        <StatusBar hidden={true} animated={true} />
+        <SignalrProvider>
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="index" />
+            <Stack.Screen name="home" />
+            <Stack.Screen name="food/[id]" options={{ headerShown: true }} />
+            <Stack.Screen name="payment" />
+          </Stack>
+          <StatusBar hidden={true} animated={true} />
+          <Toast position="top" config={toastConfig} />
+        </SignalrProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );

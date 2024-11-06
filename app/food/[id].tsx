@@ -34,6 +34,7 @@ const foodItem = {
 
 export default function FoodDetail() {
   const { id } = useLocalSearchParams(); // Get the food item ID from the URL
+
   const windowWidth = Dimensions.get("window").width;
 
   return (

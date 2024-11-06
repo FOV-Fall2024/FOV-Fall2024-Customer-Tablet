@@ -8,13 +8,27 @@ import {
 } from "react-native";
 import React, { useState } from "react";
 import { FontAwesome } from "@expo/vector-icons";
+import { useMutation } from "@tanstack/react-query";
+import { tableLogout } from "@/apis";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { router } from "expo-router";
 
 export default function LogoutButton() {
   const [modalVisible, setModalVisible] = useState(false);
   const [employeeCode, setEmployeeCode] = useState("");
-  const handleLogout = () => {
+  const { mutate, isPending } = useMutation({
+    mutationFn: tableLogout,
+  });
+  const handleLogout = async () => {
+    const loginData = await AsyncStorage.getItem("loginData");
+    const tableId = JSON.parse(loginData!).tableId;
+
+    mutate({ id: tableId, employeeCode });
+    await AsyncStorage.removeItem("loginData");
+
     setModalVisible(false);
     setEmployeeCode("");
+    router.push("/");
   };
   return (
     <>
@@ -52,8 +66,11 @@ export default function LogoutButton() {
               <TouchableOpacity
                 className="rounded bg-blue-500 p-2"
                 onPress={handleLogout}
+                disabled={isPending}
               >
-                <Text className="text-white">Đăng xuất</Text>
+                <Text className="text-white">
+                  {isPending ? "Đang xử lý" : "Đăng xuất"}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>

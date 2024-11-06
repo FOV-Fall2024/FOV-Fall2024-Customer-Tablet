@@ -1,6 +1,6 @@
 import axios from "axios";
 const axioClient = axios.create({
-  baseURL: "https://6639726e1ae792804bebbf8f.mockapi.io/api",
+  baseURL: "http://vktrng.ddns.net:8080/api",
   headers: {
     "Content-Type": "application/json",
   },

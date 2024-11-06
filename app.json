@@ -17,6 +17,9 @@
       "requireFullScreen": true
     },
     "android": {
+      "networkSecurityConfig": {
+        "clearTextPermitted": true
+      },
       "permissions": ["INTERNET"],
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",

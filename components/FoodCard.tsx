@@ -42,7 +42,13 @@ export default function FoodCard({
         accessibilityLabel={`Ảnh món ${name}`}
       />
       <View className="p-4">
-        <Text className="text-xl font-bold text-gray-800 mb-8">{name}</Text>
+        <Text
+          className="text-xl font-bold text-gray-800 mb-8"
+          numberOfLines={1}
+          ellipsizeMode="tail"
+        >
+          {name}
+        </Text>
         <View className="flex-row items-center justify-between ">
           <View>
             <Text className="text-lg font-semibold text-green-600">

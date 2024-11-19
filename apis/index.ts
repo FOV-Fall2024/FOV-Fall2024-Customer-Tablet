@@ -1,7 +1,9 @@
 import type {
   Category,
   Combo,
+  ComboDetail,
   Dish,
+  DishDetail,
   GetResponse,
   Restaurant,
   Table,
@@ -210,6 +212,30 @@ export async function orderMoreFood(data: {
 export async function getPoint(phone: string) {
   try {
     const response = await axioClient.get(`/Point?PhoneNumber=${phone}`);
+    return response.data;
+  } catch (error: any) {
+    return error.response.data;
+  }
+}
+
+export async function getDetail(
+  id: string,
+  type: string
+): Promise<DishDetail | ComboDetail> {
+  if (type === "Dish") {
+    const response = await axioClient.get(`/v1/Dish/${id}/detail`);
+    return response.data;
+  }
+  const response = await axioClient.get(`/v1/Combo/${id}`);
+  return response.data;
+}
+
+export async function leaveInfo(data: {
+  phoneNumber: string;
+  fullName: string;
+}) {
+  try {
+    const response = await axioClient.post("/User/register", data);
     return response.data;
   } catch (error: any) {
     return error.response.data;

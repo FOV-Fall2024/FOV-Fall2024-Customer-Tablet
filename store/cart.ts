@@ -17,7 +17,8 @@ type CartStore = {
       | "serve"
       | "cancel"
       | "addMore"
-      | "cancelAddMore",
+      | "cancelAddMore"
+      | "payment",
     type?: string
   ) => void;
   changeItemStatusToServe: (itemId: string) => void;
@@ -147,6 +148,10 @@ export const useCartStore = create<CartStore>((set, get) => ({
       if (status === "cancelAddMore") {
         const newItems = state.items.filter((i) => i.itemStatus !== "idle");
         return { cartStatus: "serve", items: newItems };
+      }
+
+      if (status === "payment") {
+        return { cartStatus: "payment" };
       }
       return { cartStatus: status };
     }),

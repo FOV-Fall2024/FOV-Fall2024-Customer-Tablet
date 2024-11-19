@@ -24,6 +24,7 @@ export default function Order() {
     (state) => state.findItemNameToServe
   );
   const totalMoney = useCartStore((state) => state.getTotalMoney);
+  const clearCart = useCartStore((state) => state.clearCart);
 
   const { mutateAsync, isPending, error } = useMutation({
     mutationFn: orderFood,
@@ -63,6 +64,7 @@ export default function Order() {
         type: "error",
         text1: data.message,
       });
+      // console.log(data.message);
     }
   };
 
@@ -140,6 +142,13 @@ export default function Order() {
         Toast.show({
           type: "info",
           text1: "Đơn hàng của bạn đã bị hủy",
+        });
+      }
+      if (status === "Finish") {
+        clearCart();
+        Toast.show({
+          type: "success",
+          text1: "Thanh toán thành công",
         });
       }
     });

@@ -27,6 +27,7 @@ function PaymentModal({
   orderId,
 }: PaymentModalProps) {
   const getTotalMoney = useCartStore((state) => state.getTotalMoney);
+  const changeCartStatus = useCartStore((state) => state.changeCartStatus);
   const [openLeaveInfoModal, setOpenLeaveInfoModal] = useState(false);
   const [isChecked, setChecked] = useState(false);
 
@@ -104,6 +105,7 @@ function PaymentModal({
       feedback,
     });
     if (data.statusCode === 200) {
+      changeCartStatus("payment");
       Toast.show({
         type: "success",
         text1: "Đợi nhân viên xác nhận thanh toán",

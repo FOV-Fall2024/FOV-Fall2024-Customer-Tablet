@@ -38,7 +38,11 @@ export default function FoodList({
               <Link
                 href={{
                   pathname: "/food/[id]",
-                  params: { id: "2", title: "Bún chả giò chay" },
+                  params: {
+                    id: `${item.id}`,
+                    title: `${item.comboName}`,
+                    type: "Combo",
+                  },
                 }}
                 asChild
               >
@@ -59,7 +63,11 @@ export default function FoodList({
             <Link
               href={{
                 pathname: "/food/[id]",
-                params: { id: "2", title: "Bún chả giò chay" },
+                params: {
+                  id: `${item.id}`,
+                  title: `${item.dishName}`,
+                  type: "Dish",
+                },
               }}
               asChild
             >

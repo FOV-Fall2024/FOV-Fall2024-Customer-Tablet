@@ -148,6 +148,7 @@ export default function Home() {
             fetchNextPage={fetchNextPage}
             hasNextPage={hasNextPage}
             isFetchingNextPage={isFetchingNextPage}
+            refetch={refetch}
           />
           <Order />
         </View>

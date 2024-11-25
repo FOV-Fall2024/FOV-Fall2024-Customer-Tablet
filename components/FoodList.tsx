@@ -1,5 +1,11 @@
-import { View, Text, Pressable, ActivityIndicator } from "react-native";
-import React from "react";
+import {
+  View,
+  Text,
+  Pressable,
+  ActivityIndicator,
+  RefreshControl,
+} from "react-native";
+import React, { useState } from "react";
 import FoodCard from "./FoodCard";
 import { FlashList } from "@shopify/flash-list";
 import { Link } from "expo-router";
@@ -12,6 +18,7 @@ type FoodListProps = {
   fetchNextPage: () => void;
   hasNextPage: boolean;
   isFetchingNextPage: boolean;
+  refetch: () => any;
 };
 export default function FoodList({
   isFetching,
@@ -19,8 +26,14 @@ export default function FoodList({
   fetchNextPage,
   hasNextPage,
   isFetchingNextPage,
+  refetch,
 }: FoodListProps) {
-  if (isFetching) {
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = React.useCallback(() => {
+    setRefreshing(true);
+    refetch().then(() => setRefreshing(false));
+  }, [refetch]);
+  if (isFetching && !refreshing) {
     return (
       <View className="w-[60%] justify-center items-center">
         <ActivityIndicator size="large" color="#0000ff" />
@@ -93,6 +106,9 @@ export default function FoodList({
           }
         }}
         onEndReachedThreshold={0.5}
+        refreshControl={
+          <RefreshControl refreshing={isFetching} onRefresh={onRefresh} />
+        }
         ListEmptyComponent={() => (
           <View className="flex-1 justify-center items-center py-20">
             <Text className="text-gray-500">không tìm thấy món ăn</Text>

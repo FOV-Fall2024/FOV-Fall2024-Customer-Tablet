@@ -6,16 +6,21 @@ import {
   TextInput,
   Button,
 } from "react-native";
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { FontAwesome } from "@expo/vector-icons";
 import { useMutation } from "@tanstack/react-query";
 import { tableLogout } from "@/apis";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
+import { useCartStore } from "@/store";
+import { SignalrContext } from "@/context";
 
 export default function LogoutButton() {
+  const { connection } = useContext(SignalrContext);
+  const clearCart = useCartStore((state) => state.clearCart);
   const [modalVisible, setModalVisible] = useState(false);
   const [employeeCode, setEmployeeCode] = useState("");
+  const orderStatus = useCartStore((state) => state.cartStatus);
   const { mutate, isPending } = useMutation({
     mutationFn: tableLogout,
   });
@@ -26,6 +31,14 @@ export default function LogoutButton() {
     mutate({ id: tableId, employeeCode });
     await AsyncStorage.removeItem("loginData");
 
+    clearCart();
+    connection?.off("ReceiveOrderDetailsStatus");
+    connection?.off("ReceiveOrderStatus");
+    connection?.off("ReceiveRefundOrderDetails");
+    connection?.off("ReceiveCancelAddMoreOrder");
+    connection?.off("ReceiveMessage");
+    connection?.off("ReceiveOrder");
+
     setModalVisible(false);
     setEmployeeCode("");
     router.push("/");
@@ -33,8 +46,11 @@ export default function LogoutButton() {
   return (
     <>
       <TouchableOpacity
-        className="p-2 bg-red-500 rounded-full mt-4"
+        className={`p-2 bg-red-500 rounded-full mt-4 ${
+          orderStatus !== "idle" && "opacity-50"
+        }`}
         onPress={() => setModalVisible(true)}
+        disabled={orderStatus !== "idle"}
       >
         <FontAwesome name="sign-out" size={20} color="#fff" />
       </TouchableOpacity>

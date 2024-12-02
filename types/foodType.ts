@@ -5,4 +5,5 @@ export type Food = {
   image: string;
   price: number;
   type: "Dish" | "Combo";
+  isRefundDish?: boolean;
 };

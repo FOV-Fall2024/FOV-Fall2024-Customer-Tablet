@@ -15,6 +15,7 @@ export default function FoodCard({
   price,
   id,
   type,
+  isRefundDish,
 }: Food) {
   const cartStatus = useCartStore((state) => state.cartStatus);
   const addItems = useCartStore((state) => state.addItem);
@@ -30,6 +31,7 @@ export default function FoodCard({
   const removeItem = useCartStore((state) => state.removeItem);
   const listItems = useCartStore((state) => state.items);
   const item = listItems.find((item) => item.id === id);
+  const isOrdering = useCartStore((state) => state.isOrdering);
 
   return (
     <View className="bg-white rounded-2xl shadow-lg w-full">
@@ -56,52 +58,12 @@ export default function FoodCard({
             </Text>
           </View>
 
-          {/* <View className="justify-center">
-            {(item?.cartQuantity ?? 0) > 0 ? (
-              <View className="flex-row items-center bg-blue-100 rounded-full absolute right-0">
-                <TouchableOpacity
-                  className="p-2"
-                  onPress={() => {
-                    if (item?.cartQuantity === 1) {
-                      removeItem(item?.id as string);
-                      return;
-                    }
-                    decreaseItemQuantity(item?.id as string);
-                  }}
-                  accessibilityLabel="Giảm số lượng"
-                  disabled={item?.itemStatus !== "idle"}
-                >
-                  <AntDesign name="minus" size={20} color="blue" />
-                </TouchableOpacity>
-                <Text className="px-3 font-bold text-blue-500">
-                  {item?.cartQuantity}
-                </Text>
-                <TouchableOpacity
-                  className="p-2"
-                  onPress={() => {
-                    increaseItemQuantity(item?.id as string);
-                  }}
-                  accessibilityLabel="Tăng số lượng"
-                  disabled={item?.itemStatus !== "idle"}
-                >
-                  <AntDesign name="plus" size={20} color="blue" />
-                </TouchableOpacity>
-              </View>
-            ) : (
-              <TouchableOpacity
-                className="bg-blue-500 rounded-full p-3 active:bg-blue-600 absolute right-0"
-                accessibilityLabel="Thêm vào giỏ hàng"
-                onPress={() => {
-                  addItems({ category, image, name, price, id, type });
-                }}
-                disabled={cartStatus !== "idle"}
-              >
-                <AntDesign name="plus" size={24} color="white" />
-              </TouchableOpacity>
-            )}
-          </View> */}
           <TouchableOpacity
-            className="bg-blue-500 rounded-full p-3 active:bg-blue-600 absolute right-0"
+            className={`rounded-full p-3 absolute right-0 bg-blue-500 ${
+              (cartStatus !== "idle" && cartStatus !== "addMore") || isOrdering
+                ? "opacity-50"
+                : "bg-blue-500"
+            }`}
             accessibilityLabel="Thêm vào giỏ hàng"
             onPress={() => {
               if (cartStatus === "addMore") {
@@ -113,7 +75,15 @@ export default function FoodCard({
                   increaseAddMoreItemQuantity(id);
                   return;
                 }
-                addItems({ category, image, name, price, id, type });
+                addItems({
+                  category,
+                  image,
+                  name,
+                  price,
+                  id,
+                  type,
+                  isRefundDish,
+                });
                 return;
               }
 
@@ -121,10 +91,20 @@ export default function FoodCard({
                 increaseItemQuantity(id);
                 return;
               } else {
-                addItems({ category, image, name, price, id, type });
+                addItems({
+                  category,
+                  image,
+                  name,
+                  price,
+                  id,
+                  type,
+                  isRefundDish,
+                });
               }
             }}
-            disabled={cartStatus !== "idle" && cartStatus !== "addMore"}
+            disabled={
+              (cartStatus !== "idle" && cartStatus !== "addMore") || isOrdering
+            }
           >
             <AntDesign name="plus" size={24} color="white" />
           </TouchableOpacity>

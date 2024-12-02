@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useCallback, useState } from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
 import { Image } from "expo-image";
@@ -10,6 +10,7 @@ const blurhash =
   "|rF?hV%2WCj[ayj[a|j[az_NaeWBj@ayfRayfQfQM{M|azj[azf6fQfQfQIpWXofj[ayj[j[fQayWCoeoeaya}j[ayfQa{oLj?j[WVj[ayayj[fQoff7azayj[ayj[j[ayofayayayj[fQj[ayayj[ayfjj[j[ayjuayj[";
 
 export default function OrderItem({ item }: { item: CartItem }) {
+  const [localNote, setLocalNote] = useState(item.note);
   const increaseItemQuantity = useCartStore(
     (state) => state.increaseItemQuantity
   );
@@ -24,8 +25,21 @@ export default function OrderItem({ item }: { item: CartItem }) {
   const decreaseAddMoreItemQuantity = useCartStore(
     (state) => state.decreaseAddMoreItemQuantity
   );
+  const changeNote = useCartStore((state) => state.changeNote);
   const removeAddMoreItem = useCartStore((state) => state.removeAddMoreItem);
+  const isOrdering = useCartStore((state) => state.isOrdering);
   const listItems = useCartStore((state) => state.items);
+
+  const handleNoteChange = useCallback((text: string) => {
+    setLocalNote(text);
+  }, []);
+
+  const handleNoteEndEditing = useCallback(
+    (e: { nativeEvent: { text: string } }) => {
+      changeNote(e.nativeEvent.text, item.id);
+    },
+    [localNote, item.id, changeNote]
+  );
 
   return (
     <View className="flex flex-row items-center justify-start p-4 bg-white rounded-lg shadow-md">
@@ -63,7 +77,12 @@ export default function OrderItem({ item }: { item: CartItem }) {
           ) : item.itemStatus === "cook" ? (
             <View className="flex flex-row items-center space-x-4 ">
               <Text className="text-base">Số lượng: {item.cartQuantity}</Text>
-              <Text>Đang nấu</Text>
+
+              {item.isRefundDish ? (
+                <Text>Đang lấy</Text>
+              ) : (
+                <Text>Đang nấu</Text>
+              )}
             </View>
           ) : item.itemStatus === "serve" ? (
             <View className="flex flex-row items-center space-x-4 ">
@@ -132,7 +151,10 @@ export default function OrderItem({ item }: { item: CartItem }) {
           <TextInput
             placeholder="Thêm lời nhắn cho đầu bếp"
             className="border border-gray-300 rounded-md px-2 py-1"
-            readOnly={item.itemStatus !== "idle"}
+            readOnly={item.itemStatus !== "idle" || isOrdering}
+            onChangeText={handleNoteChange}
+            onEndEditing={(e) => handleNoteEndEditing(e)}
+            value={localNote}
           />
         </View>
       </View>

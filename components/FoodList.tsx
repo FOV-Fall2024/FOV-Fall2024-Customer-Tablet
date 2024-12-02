@@ -67,6 +67,7 @@ export default function FoodList({
                     price={+item.comboPrice}
                     id={item.id}
                     type={"Combo"}
+                    isRefundDish={false}
                   />
                 </Pressable>
               </Link>
@@ -92,6 +93,7 @@ export default function FoodList({
                   price={+item.price}
                   id={item.id}
                   type={"Dish"}
+                  isRefundDish={item.isRefundDish}
                 />
               </Pressable>
             </Link>

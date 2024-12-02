@@ -1,8 +1,8 @@
 import { router } from "expo-router";
 import React, { Dispatch, SetStateAction, useState } from "react";
 import {
-  Button,
   Modal,
+  ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
@@ -12,28 +12,27 @@ import LeaveInfoModal from "./LeaveInfoModal";
 import { useMutation } from "@tanstack/react-query";
 import { cashPayment, getPoint, getVnpayUrl } from "@/apis";
 import Toast from "react-native-toast-message";
-import Checkbox from "expo-checkbox";
 import { toastConfig } from "./ToastConfig";
 import { useCartStore } from "@/store";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 type PaymentModalProps = {
   isOpenPaymentModal: boolean;
   setOpenPaymentModal: Dispatch<SetStateAction<boolean>>;
-  orderId: string;
 };
 function PaymentModal({
   isOpenPaymentModal,
   setOpenPaymentModal,
-  orderId,
 }: PaymentModalProps) {
   const getTotalMoney = useCartStore((state) => state.getTotalMoney);
   const changeCartStatus = useCartStore((state) => state.changeCartStatus);
   const [openLeaveInfoModal, setOpenLeaveInfoModal] = useState(false);
-  const [isChecked, setChecked] = useState(false);
 
-  const [moneyDiscount, setMoneyDiscount] = useState<number | undefined>(
-    undefined
-  );
+  const [totalMoneyDiscount, setTotalMoneyDiscount] = useState<
+    number | undefined
+  >(undefined);
+
+  const [moneyDiscount, setMoneyDiscount] = useState<number | undefined>();
   const [feedback, setFeedback] = useState("");
 
   const [phone, setPhone] = useState("");
@@ -62,7 +61,7 @@ function PaymentModal({
 
     const data = await mutateAsync(phone);
     if (data.statusCode === 200) {
-      setMoneyDiscount(data.metadata);
+      setTotalMoneyDiscount(data.metadata);
     } else {
       Toast.show({
         type: "error",
@@ -75,11 +74,13 @@ function PaymentModal({
     useMutation({
       mutationFn: getVnpayUrl,
     });
+
   const handleVnPay = async () => {
+    const orderId = (await AsyncStorage.getItem("orderId")) as string;
     const data = await muatateVnPayUrl({
       orderId,
       phoneNumber: phone,
-      usePoint: isChecked,
+      usePoint: !!moneyDiscount,
       pointToApply: moneyDiscount as number,
       feedback,
     });
@@ -96,11 +97,13 @@ function PaymentModal({
     useMutation({
       mutationFn: cashPayment,
     });
+
   const handleCashPayment = async () => {
+    const orderId = (await AsyncStorage.getItem("orderId")) as string;
     const data = await mutateCash({
       orderId,
       phoneNumber: phone,
-      usePoint: isChecked,
+      usePoint: !!moneyDiscount,
       pointToApply: moneyDiscount as number,
       feedback,
     });
@@ -118,142 +121,344 @@ function PaymentModal({
       });
     }
   };
+  const isProcessing =
+    isGettingPoint || isGettingVnPayUrl || isCashPaymentRequest;
 
   return (
+    // <Modal
+    //   visible={isOpenPaymentModal}
+    //   transparent={true}
+    //   animationType="slide"
+    //   onRequestClose={() => setOpenPaymentModal(false)}
+    // >
+    //   <View className="bg-white flex-1 p-4">
+    //     <View>
+    //       <Text>
+    //         Vui lòng nhập số điện thoại để thống kiểm tra giảm giá (không bắt
+    //         buộc)
+    //       </Text>
+    //       <View className="flex flex-row items-center justify-center mt-2">
+    //         <TextInput
+    //           placeholder="Số điện thoại"
+    //           className="border border-gray-300 rounded-md px-2 py-1 flex-1 mr-2"
+    //           value={phone}
+    //           onChangeText={(text) => {
+    //             setPhone(text);
+    //             if (moneyDiscount !== undefined) {
+    //               setMoneyDiscount(undefined);
+    //             }
+    //           }}
+    //           editable={
+    //             !isGettingPoint || !isGettingVnPayUrl || !isCashPaymentRequest
+    //           }
+    //         />
+    //         <Button
+    //           title="Kiểm tra"
+    //           onPress={handleGetPoint}
+    //           disabled={
+    //             isGettingPoint || isGettingVnPayUrl || isCashPaymentRequest
+    //           }
+    //         />
+    //       </View>
+    //     </View>
+    //     <View className="mt-2">
+    //       <Text>Vui lòng để lại góp ý cho nhà hàng (không bắt buộc)</Text>
+    //       <TextInput
+    //         placeholder="Góp ý"
+    //         multiline
+    //         numberOfLines={5}
+    //         textAlignVertical="top"
+    //         className="border border-gray-300 rounded-md px-2 py-1 mt-2"
+    //         value={feedback}
+    //         onChangeText={setFeedback}
+    //         editable={
+    //           !isGettingPoint || !isGettingVnPayUrl || !isCashPaymentRequest
+    //         }
+    //       />
+    //     </View>
+    //     {moneyDiscount !== undefined && moneyDiscount > 0 ? (
+    //       <View className="flex flex-row items-center mt-2">
+    //         <Checkbox
+    //           className="mr-2"
+    //           value={isChecked}
+    //           onValueChange={setChecked}
+    //           color={isChecked ? "#3B82F6" : undefined}
+    //           disabled={
+    //             isGettingPoint || isGettingVnPayUrl || isCashPaymentRequest
+    //           }
+    //         />
+    //         <Text>
+    //           Bạn được giảm giá {moneyDiscount.toLocaleString("vi-VN")} đ
+    //         </Text>
+    //       </View>
+    //     ) : moneyDiscount === 0 ? (
+    //       <Text className="mt-2">Bạn không có điểm tích lũy để giảm giá</Text>
+    //     ) : (
+    //       <Text className="mt-2">
+    //         Nếu bạn chưa có thông tin thành viên vui lòng để lại thông tin{" "}
+    //         <TouchableOpacity
+    //           onPress={() => setOpenLeaveInfoModal(true)}
+    //           disabled={
+    //             isGettingPoint || isGettingVnPayUrl || isCashPaymentRequest
+    //           }
+    //         >
+    //           <Text className="text-blue-500 underline"> tại đây </Text>
+    //         </TouchableOpacity>
+    //         <Text> (không bắt buộc)</Text>.
+    //       </Text>
+    //     )}
+
+    //     {isChecked ? (
+    //       <Text className="mt-2">
+    //         Tổng cộng:{" "}
+    //         {(getTotalMoney() - (moneyDiscount ?? 0)).toLocaleString("vi-VN")}
+    //       </Text>
+    //     ) : (
+    //       <Text className="mt-2">
+    //         Tổng cộng: {getTotalMoney().toLocaleString("vi-VN")}
+    //       </Text>
+    //     )}
+
+    //     <View className="flex flex-row mt-2">
+    //       <TouchableOpacity
+    //         className="bg-blue-500 py-2 px-4 rounded-full mr-2 flex-1"
+    //         onPress={() => setOpenPaymentModal(false)}
+    //         disabled={
+    //           isGettingPoint || isGettingVnPayUrl || isCashPaymentRequest
+    //         }
+    //       >
+    //         <Text className="text-center text-base font-bold text-white">
+    //           Quay lại
+    //         </Text>
+    //       </TouchableOpacity>
+    //       <TouchableOpacity
+    //         disabled={
+    //           isGettingPoint || isGettingVnPayUrl || isCashPaymentRequest
+    //         }
+    //         className="bg-blue-500 py-2 px-4 rounded-full mr-2 flex-1"
+    //         onPress={() => {
+    //           handleVnPay();
+    //         }}
+    //       >
+    //         <Text className="text-white text-center text-base font-bold">
+    //           Thanh toán qua vnpay
+    //         </Text>
+    //       </TouchableOpacity>
+    //       <TouchableOpacity
+    //         className="bg-blue-500 py-2 px-4 rounded-full flex-1"
+    //         disabled={
+    //           isGettingPoint || isGettingVnPayUrl || isCashPaymentRequest
+    //         }
+    //         onPress={() => {
+    //           handleCashPayment();
+    //         }}
+    //       >
+    //         <Text className="text-white text-center text-base font-bold">
+    //           Thanh toán bằng tiền mặt
+    //         </Text>
+    //       </TouchableOpacity>
+    //     </View>
+    //   </View>
+    //   <LeaveInfoModal
+    //     openLeaveInfoModal={openLeaveInfoModal}
+    //     setOpenLeaveInfoModal={setOpenLeaveInfoModal}
+    //     setPhone={setPhone}
+    //     setMoneyDiscount={setMoneyDiscount}
+    //   />
+    //   <Toast position="top" config={toastConfig} />
+    // </Modal>
+
     <Modal
       visible={isOpenPaymentModal}
+      // visible={true}
       transparent={true}
       animationType="slide"
       onRequestClose={() => setOpenPaymentModal(false)}
     >
-      <View className="bg-white flex-1 p-4">
-        <View>
-          <Text>
-            Vui lòng nhập số điện thoại để thống kiểm tra giảm giá (không bắt
-            buộc)
+      <ScrollView className="p-4 bg-white rounded-lg flex-1">
+        <Text className="text-3xl font-bold mb-8 text-center">Thanh toán</Text>
+
+        <View className="mb-4">
+          <Text className="text-xl mb-3 font-semibold">Kiểm tra giảm giá</Text>
+          <Text className="text-base text-gray-600 mb-3">
+            Vui lòng nhập số điện thoại để kiểm tra giảm giá (không bắt buộc)
           </Text>
-          <View className="flex flex-row items-center justify-center mt-2">
+          <View className="flex-row items-center">
             <TextInput
+              className="flex-1 mr-3 border border-gray-300 rounded-md px-4 py-2 text-lg"
               placeholder="Số điện thoại"
-              className="border border-gray-300 rounded-md px-2 py-1 flex-1 mr-2"
               value={phone}
               onChangeText={(text) => {
                 setPhone(text);
                 if (moneyDiscount !== undefined) {
-                  setMoneyDiscount(undefined);
+                  setTotalMoneyDiscount(undefined);
                 }
               }}
-              editable={
-                !isGettingPoint || !isGettingVnPayUrl || !isCashPaymentRequest
-              }
+              editable={!isProcessing}
             />
-            <Button
-              title="Kiểm tra"
+            <TouchableOpacity
+              className={`bg-blue-500 px-6 py-3 rounded-md ${
+                isProcessing ? "opacity-50" : ""
+              }`}
               onPress={handleGetPoint}
-              disabled={
-                isGettingPoint || isGettingVnPayUrl || isCashPaymentRequest
-              }
-            />
+              disabled={isProcessing}
+            >
+              <Text className="text-white font-bold text-lg">Kiểm tra</Text>
+            </TouchableOpacity>
           </View>
         </View>
-        <View className="mt-2">
-          <Text>Vui lòng để lại góp ý cho nhà hàng (không bắt buộc)</Text>
+
+        <View className="mb-4">
+          <Text className="text-xl mb-3 font-semibold">Góp ý</Text>
+          <Text className="text-base text-gray-600 mb-3">
+            Vui lòng để lại góp ý cho nhà hàng (không bắt buộc)
+          </Text>
           <TextInput
+            className="border border-gray-300 rounded-md px-4 py-2 h-32 text-lg"
             placeholder="Góp ý"
             multiline
-            numberOfLines={5}
+            numberOfLines={3}
             textAlignVertical="top"
-            className="border border-gray-300 rounded-md px-2 py-1 mt-2"
             value={feedback}
             onChangeText={setFeedback}
-            editable={
-              !isGettingPoint || !isGettingVnPayUrl || !isCashPaymentRequest
-            }
+            editable={!isProcessing}
           />
         </View>
-        {moneyDiscount !== undefined && moneyDiscount > 0 ? (
-          <View className="flex flex-row items-center mt-2">
-            <Checkbox
-              className="mr-2"
-              value={isChecked}
-              onValueChange={setChecked}
-              color={isChecked ? "#3B82F6" : undefined}
-              disabled={
-                isGettingPoint || isGettingVnPayUrl || isCashPaymentRequest
-              }
-            />
-            <Text>
-              Bạn được giảm giá {moneyDiscount.toLocaleString("vi-VN")} đ
-            </Text>
+
+        {totalMoneyDiscount !== undefined && (
+          <View className="mb-4 p-4 bg-blue-50 rounded-lg">
+            {totalMoneyDiscount > 0 ? (
+              <View className="items-center flex-row gap-4">
+                <TextInput
+                  placeholder="Nhập số tiền muốn giảm"
+                  className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-base"
+                  keyboardType="numeric"
+                  onChangeText={(text) => setMoneyDiscount(Number(text))}
+                />
+                <Text className="text-blue-600 text-lg">
+                  Bạn được giảm giá tối đa{" "}
+                  {totalMoneyDiscount.toLocaleString("vi-VN")} đ
+                </Text>
+              </View>
+            ) : (
+              <Text className="text-gray-600 text-lg">
+                Bạn không có điểm tích lũy để giảm giá
+              </Text>
+            )}
           </View>
-        ) : moneyDiscount === 0 ? (
-          <Text className="mt-2">Bạn không có điểm tích lũy để giảm giá</Text>
-        ) : (
-          <Text className="mt-2">
-            Nếu bạn chưa có thông tin thành viên vui lòng để lại thông tin{" "}
-            <TouchableOpacity
-              onPress={() => setOpenLeaveInfoModal(true)}
-              disabled={
-                isGettingPoint || isGettingVnPayUrl || isCashPaymentRequest
-              }
-            >
-              <Text className="text-blue-500 underline"> tại đây </Text>
-            </TouchableOpacity>
-            <Text> (không bắt buộc)</Text>.
-          </Text>
         )}
 
-        {isChecked ? (
-          <Text className="mt-2">
-            Tổng cộng:{" "}
-            {(getTotalMoney() - (moneyDiscount ?? 0)).toLocaleString("vi-VN")}
-          </Text>
-        ) : (
-          <Text className="mt-2">
-            Tổng cộng: {getTotalMoney().toLocaleString("vi-VN")}
-          </Text>
-        )}
-
-        <View className="flex flex-row mt-2">
+        {totalMoneyDiscount === undefined && (
           <TouchableOpacity
-            className="bg-blue-500 py-2 px-4 rounded-full mr-2 flex-1"
+            onPress={() => setOpenLeaveInfoModal(true)}
+            disabled={isProcessing}
+            className="mb-4"
+          >
+            <Text className="text-blue-500 underline text-lg">
+              Chưa có thông tin thành viên? Nhấn vào đây để đăng ký
+            </Text>
+          </TouchableOpacity>
+        )}
+
+        <View className="mb-8">
+          {moneyDiscount && moneyDiscount > getTotalMoney() ? (
+            <Text className="text-red-600 text-lg">
+              Số tiền giảm không được lớn hơn tổng tiền của đơn hàng
+            </Text>
+          ) : moneyDiscount !== undefined &&
+            totalMoneyDiscount !== undefined &&
+            moneyDiscount > totalMoneyDiscount ? (
+            <Text className="text-red-600 text-lg">
+              Số tiền giảm không được lớn hơn số tiền giảm tối đa
+            </Text>
+          ) : (
+            <Text className="text-2xl font-bold">
+              Tổng cộng:{" "}
+              {(getTotalMoney() - (moneyDiscount ?? 0)).toLocaleString("vi-VN")}{" "}
+              đ
+            </Text>
+          )}
+        </View>
+
+        <View className="flex-row justify-between">
+          <TouchableOpacity
+            className={`bg-gray-500 py-3 px-6 rounded-md ${
+              isProcessing ? "opacity-50" : ""
+            }`}
             onPress={() => setOpenPaymentModal(false)}
+            disabled={isProcessing}
+          >
+            <Text className="text-white font-bold text-lg">Quay lại</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            className={`bg-blue-500 py-3 px-6 rounded-md ${
+              isProcessing ? "opacity-50" : ""
+            }
+            ${
+              moneyDiscount !== undefined && moneyDiscount > getTotalMoney()
+                ? "opacity-50"
+                : ""
+            } 
+            ${
+              moneyDiscount !== undefined &&
+              totalMoneyDiscount !== undefined &&
+              moneyDiscount > totalMoneyDiscount
+                ? "opacity-50"
+                : ""
+            }
+            ${
+              moneyDiscount !== undefined &&
+              getTotalMoney() - moneyDiscount < 5000
+                ? "opacity-50"
+                : ""
+            }`}
+            onPress={handleVnPay}
             disabled={
-              isGettingPoint || isGettingVnPayUrl || isCashPaymentRequest
+              isProcessing ||
+              (moneyDiscount !== undefined &&
+                moneyDiscount > getTotalMoney()) ||
+              (moneyDiscount !== undefined &&
+                getTotalMoney() - moneyDiscount < 5000) ||
+              (moneyDiscount !== undefined &&
+                totalMoneyDiscount !== undefined &&
+                moneyDiscount > totalMoneyDiscount)
             }
           >
-            <Text className="text-center text-base font-bold text-white">
-              Quay lại
+            <Text className="text-white font-bold text-lg">
+              Thanh toán VNPay
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            disabled={
-              isGettingPoint || isGettingVnPayUrl || isCashPaymentRequest
+            className={`bg-green-500 py-3 px-6 rounded-md ${
+              isProcessing ? "opacity-50" : ""
+            } 
+            ${
+              moneyDiscount !== undefined && moneyDiscount > getTotalMoney()
+                ? "opacity-50"
+                : ""
             }
-            className="bg-blue-500 py-2 px-4 rounded-full mr-2 flex-1"
-            onPress={() => {
-              handleVnPay();
-            }}
-          >
-            <Text className="text-white text-center text-base font-bold">
-              Thanh toán qua vnpay
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            className="bg-blue-500 py-2 px-4 rounded-full flex-1"
-            disabled={
-              isGettingPoint || isGettingVnPayUrl || isCashPaymentRequest
+            ${
+              moneyDiscount !== undefined &&
+              totalMoneyDiscount !== undefined &&
+              moneyDiscount > totalMoneyDiscount
+                ? "opacity-50"
+                : ""
             }
-            onPress={() => {
-              handleCashPayment();
-            }}
+            `}
+            onPress={handleCashPayment}
+            disabled={
+              isProcessing ||
+              (moneyDiscount !== undefined &&
+                moneyDiscount > getTotalMoney()) ||
+              (moneyDiscount !== undefined &&
+                totalMoneyDiscount !== undefined &&
+                moneyDiscount > totalMoneyDiscount)
+            }
           >
-            <Text className="text-white text-center text-base font-bold">
-              Thanh toán bằng tiền mặt
-            </Text>
+            <Text className="text-white font-bold text-lg">Tiền mặt</Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </ScrollView>
       <LeaveInfoModal
         openLeaveInfoModal={openLeaveInfoModal}
         setOpenLeaveInfoModal={setOpenLeaveInfoModal}

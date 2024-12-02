@@ -13,6 +13,7 @@ export type Dish = {
   categoryName: string;
   type: string;
   status: number;
+  isRefundDish: boolean;
 };
 
 export type DishDetail = {

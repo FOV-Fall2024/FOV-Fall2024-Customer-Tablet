@@ -12,6 +12,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import Toast from "react-native-toast-message";
 import { SignalrContext } from "@/context";
 import { useCartStore } from "@/store";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function Payment() {
   const { connection } = useContext(SignalrContext);
@@ -41,7 +42,7 @@ export default function Payment() {
           const { nativeEvent } = syntheticEvent;
           console.error("WebView error: ", nativeEvent);
         }}
-        onNavigationStateChange={(navState) => {
+        onNavigationStateChange={async (navState) => {
           // Kiểm tra URL để xác định khi nào thanh toán hoàn tất
           if (
             navState.url.includes(
@@ -53,6 +54,7 @@ export default function Payment() {
             if (paymentStatus === "00") {
               // Xóa giỏ hàng
               clearCart();
+              await AsyncStorage.removeItem("orderId");
               connection?.off("ReceiveOrderDetailsStatus");
               connection?.off("ReceiveOrderStatus");
               connection?.off("ReceiveRefundOrderDetails");

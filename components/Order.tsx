@@ -7,12 +7,13 @@ import { useMutation } from "@tanstack/react-query";
 import Toast from "react-native-toast-message";
 import PaymentModal from "./PaymentModal";
 import { SignalrContext } from "@/context";
+import * as SignalR from "@microsoft/signalr";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function Order() {
   const { connection } = useContext(SignalrContext);
 
   const [openPaymentModal, setOpenPaymentModal] = useState(false);
-  const [orderId, setOrderId] = useState("");
   const cartItem = useCartStore((state) => state.items);
   const orderStatus = useCartStore((state) => state.cartStatus);
   const changeCartStatus = useCartStore((state) => state.changeCartStatus);
@@ -26,11 +27,26 @@ export default function Order() {
   const totalMoney = useCartStore((state) => state.getTotalMoney);
   const clearCart = useCartStore((state) => state.clearCart);
 
+  const changeOrderingStatus = useCartStore(
+    (state) => state.changeOrderingStatus
+  );
+
+  const isOrdering = useCartStore((state) => state.isOrdering);
+
   const { mutateAsync, isPending, error } = useMutation({
     mutationFn: orderFood,
   });
 
   const handleOrder = async () => {
+    changeOrderingStatus(true);
+    if (connection?.state !== SignalR.HubConnectionState.Connected) {
+      Toast.show({
+        type: "error",
+        text1: "Không thể kết nối với máy chủ",
+      });
+      changeOrderingStatus(false);
+      return;
+    }
     const orderDetails = cartItem.map((item) =>
       item.type === "Combo"
         ? { comboId: item.id, quantity: item.cartQuantity, note: item.note }
@@ -42,28 +58,22 @@ export default function Order() {
     // console.log(error);
 
     if (data.statusCode === 200) {
-      if (!connection) {
-        Toast.show({
-          type: "error",
-          text1: "Không thể kết nối với máy chủ",
-        });
-        return;
-      }
-
       // await connection.start();
       await connection.invoke("SendOrder", data.metadata);
       changeCartStatus("pending");
-      setOrderId(data.metadata);
+      await AsyncStorage.setItem("orderId", data.metadata);
       // setIsOrderActive(true);
       Toast.show({
         type: "success",
         text1: "Đặt món thành công xin vui lòng chờ nhân viên đến xác nhận",
       });
+      changeOrderingStatus(false);
     } else {
       Toast.show({
         type: "error",
         text1: data.message,
       });
+      changeOrderingStatus(false);
       // console.log(data.message);
     }
   };
@@ -73,6 +83,16 @@ export default function Order() {
   });
 
   const handleOrderMore = async () => {
+    changeOrderingStatus(true);
+
+    if (connection?.state !== SignalR.HubConnectionState.Connected) {
+      Toast.show({
+        type: "error",
+        text1: "Không thể kết nối với máy chủ",
+      });
+      changeOrderingStatus(false);
+      return;
+    }
     const newOrderDetails = cartItem
       .filter((item) => item.itemStatus === "idle")
       .map((item) =>
@@ -80,6 +100,7 @@ export default function Order() {
           ? { comboId: item.id, quantity: item.cartQuantity, note: item.note }
           : { productId: item.id, quantity: item.cartQuantity, note: item.note }
       );
+    const orderId = (await AsyncStorage.getItem("orderId")) as string;
     const data = await OrderMore({ orderId, newOrderDetails });
     // console.log("data", data);
 
@@ -89,11 +110,13 @@ export default function Order() {
         text1: "Gọi thêm món thành công",
       });
       changeCartStatus("pending", "addMore");
+      changeOrderingStatus(false);
     } else {
       Toast.show({
         type: "error",
         text1: data.message,
       });
+      changeOrderingStatus(false);
     }
   };
   // || !isOrderActive
@@ -102,8 +125,9 @@ export default function Order() {
     connection.onclose(() => {
       console.log("Disconnected from SignalR");
     });
-    connection.onreconnected(() => {
+    connection.onreconnected(async () => {
       if (orderStatus !== "idle") {
+        const orderId = await AsyncStorage.getItem("orderId");
         connection.invoke("SendOrder", orderId);
       }
     });
@@ -121,37 +145,42 @@ export default function Order() {
       }
     );
 
-    connection.on("ReceiveOrderStatus", (orderId: string, status: string) => {
-      if (status === "Cook") {
-        changeCartStatus("cook");
-        Toast.show({
-          type: "success",
-          text1: "Món ăn của bạn đang được chuẩn bị",
-        });
+    connection.on(
+      "ReceiveOrderStatus",
+      async (orderId: string, status: string) => {
+        if (status === "Cook") {
+          if (orderStatus === "cook") return;
+          changeCartStatus("cook");
+          Toast.show({
+            type: "success",
+            text1: "Món ăn của bạn đang được chuẩn bị",
+          });
+        }
+        if (status === "Canceled") {
+          changeCartStatus("cancel");
+          // connection.off("ReceiveOrderDetailsStatus");
+          // connection.off("ReceiveOrderStatus");
+          // connection.off("ReceiveRefundOrderDetails");
+          // connection.off("ReceiveCancelAddMoreOrder");
+          // connection.off("ReceiveMessage");
+          // connection.off("ReceiveOrder");
+          // connection.stop();
+          // setIsOrderActive(false);
+          Toast.show({
+            type: "info",
+            text1: "Đơn hàng của bạn đã bị hủy",
+          });
+        }
+        if (status === "Finish") {
+          clearCart();
+          await AsyncStorage.removeItem("orderId");
+          Toast.show({
+            type: "success",
+            text1: "Thanh toán thành công",
+          });
+        }
       }
-      if (status === "Canceled") {
-        changeCartStatus("cancel");
-        // connection.off("ReceiveOrderDetailsStatus");
-        // connection.off("ReceiveOrderStatus");
-        // connection.off("ReceiveRefundOrderDetails");
-        // connection.off("ReceiveCancelAddMoreOrder");
-        // connection.off("ReceiveMessage");
-        // connection.off("ReceiveOrder");
-        // connection.stop();
-        // setIsOrderActive(false);
-        Toast.show({
-          type: "info",
-          text1: "Đơn hàng của bạn đã bị hủy",
-        });
-      }
-      if (status === "Finish") {
-        clearCart();
-        Toast.show({
-          type: "success",
-          text1: "Thanh toán thành công",
-        });
-      }
-    });
+    );
 
     connection.on(
       "ReceiveRefundOrderDetails",
@@ -213,10 +242,13 @@ export default function Order() {
         ) : orderStatus === "serve" ? (
           <View className="flex flex-row items-center justify-center gap-4 mt-2">
             <TouchableOpacity
-              className="bg-blue-500 py-2 px-4 rounded-full flex-1"
+              className={`bg-blue-500 py-2 px-4 rounded-full flex-1 ${
+                isPending || isOrdering ? "opacity-50" : ""
+              }`}
               onPress={() => {
                 changeCartStatus("addMore");
               }}
+              disabled={isPending || isOrdering}
             >
               <Text className="text-white text-center text-base font-bold">
                 Gọi thêm
@@ -224,9 +256,11 @@ export default function Order() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              className="bg-blue-500 py-2 px-4 rounded-full flex-1"
+              className={`bg-blue-500 py-2 px-4 rounded-full flex-1 ${
+                isPending || isOrdering ? "opacity-50" : ""
+              }`}
               onPress={() => setOpenPaymentModal(true)}
-              disabled={isPending}
+              disabled={isPending || isOrdering}
             >
               <Text className="text-white text-center text-base font-bold">
                 Thanh toán
@@ -235,21 +269,36 @@ export default function Order() {
           </View>
         ) : orderStatus === "addMore" ? (
           <View className="flex flex-row items-center justify-center gap-4 mt-2">
-            <TouchableOpacity className="bg-blue-500 py-2 px-4 rounded-full flex-1">
-              <Text
-                className="text-white text-center text-base font-bold"
-                onPress={handleOrderMore}
-                disabled={isAddingMore}
-              >
+            <TouchableOpacity
+              className={`py-2 px-4 rounded-full flex-1 ${
+                isAddingMore ||
+                !cartItem.find((i) => i.itemStatus === "idle") ||
+                isOrdering
+                  ? "bg-gray-500" // Disabled state
+                  : "bg-blue-500" // Enabled state
+              }`}
+              onPress={handleOrderMore}
+              disabled={
+                isAddingMore ||
+                !cartItem.find((i) => i.itemStatus === "idle" || isOrdering)
+              }
+            >
+              <Text className="text-white text-center text-base font-bold">
                 {isAddingMore ? "Đang xử lý..." : "Xác nhận gọi thêm món"}
               </Text>
             </TouchableOpacity>
-            <TouchableOpacity className="bg-blue-500 py-2 px-4 rounded-full flex-1">
+
+            <TouchableOpacity
+              className={` py-2 px-4 rounded-full flex-1 bg-blue-500 ${
+                isAddingMore ? "opacity-50" : "bg-blue-500"
+              }`}
+            >
               <Text
-                className="text-white text-center text-base font-bold"
+                className={`text-white text-center text-base font-bold `}
                 onPress={() => {
                   changeCartStatus("cancelAddMore");
                 }}
+                disabled={isAddingMore || isOrdering}
               >
                 Hủy gọi thêm món
               </Text>
@@ -261,31 +310,24 @@ export default function Order() {
           </Text>
         ) : (
           <TouchableOpacity
-            className="mt-4 bg-blue-500 py-2 px-4 rounded-full"
+            className={`mt-4 py-2 px-4 rounded-full ${
+              isPending || cartItem.length === 0 || isOrdering
+                ? "bg-gray-500"
+                : "bg-blue-500"
+            } `}
             onPress={handleOrder}
-            disabled={isPending}
+            disabled={isPending || cartItem.length === 0 || isOrdering}
           >
             <Text className="text-white text-center text-base font-bold">
               {isPending ? "Đang xử lý..." : "Đặt món"}
             </Text>
           </TouchableOpacity>
-
-          // <TouchableOpacity
-          //   className="mt-4 bg-blue-500 py-2 px-4 rounded-full"
-          //   onPress={() => setOpenPaymentModal(true)}
-          //   disabled={isPending}
-          // >
-          //   <Text className="text-white text-center text-base font-bold">
-          //     Thanh toán
-          //   </Text>
-          // </TouchableOpacity>
         )}
       </View>
 
       <PaymentModal
         isOpenPaymentModal={openPaymentModal}
         setOpenPaymentModal={setOpenPaymentModal}
-        orderId={orderId}
       />
     </View>
   );

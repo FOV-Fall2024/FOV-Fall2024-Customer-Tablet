@@ -129,6 +129,7 @@ export async function getVnpayUrl(data: {
       );
       return response.data;
     }
+
     if (data.usePoint) {
       const response = await axioClient.post(
         `/Payment/${data.orderId}/vn-pay?PhoneNumber=${data.phoneNumber}&UsePoints=true&PointsToApply=${data.pointToApply}`,
@@ -139,7 +140,7 @@ export async function getVnpayUrl(data: {
       return response.data;
     } else {
       const response = await axioClient.post(
-        `/Payment/${data.orderId}/vn-pay?PhoneNumber=${data.phoneNumber}$UsePoint=false`,
+        `/Payment/${data.orderId}/vn-pay?PhoneNumber=${data.phoneNumber}&UsePoints=false`,
         {
           feedback: data.feedback,
         }
@@ -175,7 +176,7 @@ export async function cashPayment(data: {
       return response.data;
     } else {
       const response = await axioClient.post(
-        `/Payment/${data.orderId}/cash?PhoneNumber=${data.phoneNumber}$UsePoint=false`,
+        `/Payment/${data.orderId}/cash?PhoneNumber=${data.phoneNumber}&UsePoint=false`,
         {
           feedback: data.feedback,
         }

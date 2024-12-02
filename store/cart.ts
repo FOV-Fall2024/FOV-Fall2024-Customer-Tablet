@@ -4,6 +4,7 @@ import { create } from "zustand";
 type CartStore = {
   items: CartItem[];
   cartStatus: "idle" | "pending" | "cook" | "serve" | "addMore" | "payment";
+
   addItem: (item: Food) => void;
   removeItem: (itemId: string) => void;
   clearCart: () => void;
@@ -29,6 +30,11 @@ type CartStore = {
   changeStatusAddMoreItemToServe: (itemId: string) => void;
   findItemNameToServe: (itemId: string) => string;
   getTotalMoney: () => number;
+
+  isOrdering: boolean;
+  changeOrderingStatus: (status: boolean) => void;
+
+  changeNote: (note: string, id: string) => void;
 };
 
 export const useCartStore = create<CartStore>((set, get) => ({
@@ -262,4 +268,19 @@ export const useCartStore = create<CartStore>((set, get) => ({
       0
     );
   },
+
+  isOrdering: false,
+  changeOrderingStatus: (status) => set({ isOrdering: status }),
+
+  changeNote: (note, id) =>
+    set((state) => {
+      const newItems = state.items
+        .filter((i) => i.itemStatus === "idle")
+        .map((i) => (i.id === id ? { ...i, note } : i));
+
+      const alreadyOrderItems = state.items.filter(
+        (i) => i.itemStatus === "serve"
+      );
+      return { items: [...alreadyOrderItems, ...newItems] };
+    }),
 }));

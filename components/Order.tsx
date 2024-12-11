@@ -9,9 +9,12 @@ import PaymentModal from "./PaymentModal";
 import { SignalrContext } from "@/context";
 import * as SignalR from "@microsoft/signalr";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import HandleConnectionModal from "./HandleConnectionModal";
 
 export default function Order() {
   const { connection } = useContext(SignalrContext);
+
+  const [connectionState, setConnectionState] = useState<string>("");
 
   const [openPaymentModal, setOpenPaymentModal] = useState(false);
   const cartItem = useCartStore((state) => state.items);
@@ -32,6 +35,9 @@ export default function Order() {
   );
 
   const isOrdering = useCartStore((state) => state.isOrdering);
+
+  const discountMoney = useCartStore((state) => state.discountMoney);
+  const setDiscountMoney = useCartStore((state) => state.setDiscountMoney);
 
   const { mutateAsync, isPending, error } = useMutation({
     mutationFn: orderFood,
@@ -120,16 +126,30 @@ export default function Order() {
     }
   };
   // || !isOrderActive
+
   useEffect(() => {
     if (!connection) return;
     connection.onclose(() => {
       console.log("Disconnected from SignalR");
+      setConnectionState("Disconnected");
     });
     connection.onreconnected(async () => {
-      if (orderStatus !== "idle") {
+      console.log("Reconnected to SignalR");
+
+      if (useCartStore.getState().cartStatus !== "idle") {
+        console.log("Resend order");
+
         const orderId = await AsyncStorage.getItem("orderId");
-        connection.invoke("SendOrder", orderId);
+        connection.invoke("SendOrder", orderId).then(() => {
+          setConnectionState("");
+        });
       }
+      setConnectionState("");
+    });
+    connection.onreconnecting(() => {
+      console.log("Reconnecting to SignalR");
+
+      setConnectionState("Reconnecting");
     });
 
     connection.on(
@@ -173,6 +193,7 @@ export default function Order() {
         }
         if (status === "Finish") {
           clearCart();
+          setDiscountMoney(0);
           await AsyncStorage.removeItem("orderId");
           Toast.show({
             type: "success",
@@ -229,7 +250,7 @@ export default function Order() {
       </ScrollView>
       <View className="mt-4 border-t border-gray-200 pt-4">
         <Text className="text-lg font-bold">
-          Tổng cộng: {totalMoney().toLocaleString("vi-VN")} đ
+          Tổng cộng: {(totalMoney() - discountMoney).toLocaleString("vi-VN")} đ
         </Text>
         {orderStatus === "pending" ? (
           <Text className="text-lg font-bold text-center text-blue-500">
@@ -328,6 +349,11 @@ export default function Order() {
       <PaymentModal
         isOpenPaymentModal={openPaymentModal}
         setOpenPaymentModal={setOpenPaymentModal}
+      />
+
+      <HandleConnectionModal
+        connectionState={connectionState}
+        setConnectionState={setConnectionState}
       />
     </View>
   );

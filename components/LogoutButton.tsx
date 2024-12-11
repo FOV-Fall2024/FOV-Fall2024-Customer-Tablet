@@ -21,6 +21,7 @@ export default function LogoutButton() {
   const [modalVisible, setModalVisible] = useState(false);
   const [employeeCode, setEmployeeCode] = useState("");
   const orderStatus = useCartStore((state) => state.cartStatus);
+  const isOrdering = useCartStore((state) => state.isOrdering);
   const { mutate, isPending } = useMutation({
     mutationFn: tableLogout,
   });
@@ -48,9 +49,9 @@ export default function LogoutButton() {
       <TouchableOpacity
         className={`p-2 bg-red-500 rounded-full mt-4 ${
           orderStatus !== "idle" && "opacity-50"
-        }`}
+        } ${isOrdering && "opacity-50"}`}
         onPress={() => setModalVisible(true)}
-        disabled={orderStatus !== "idle"}
+        disabled={orderStatus !== "idle" || isOrdering}
       >
         <FontAwesome name="sign-out" size={20} color="#fff" />
       </TouchableOpacity>

@@ -26,6 +26,7 @@ function PaymentModal({
 }: PaymentModalProps) {
   const getTotalMoney = useCartStore((state) => state.getTotalMoney);
   const changeCartStatus = useCartStore((state) => state.changeCartStatus);
+  const setDiscountMoney = useCartStore((state) => state.setDiscountMoney);
   const [openLeaveInfoModal, setOpenLeaveInfoModal] = useState(false);
 
   const [totalMoneyDiscount, setTotalMoneyDiscount] = useState<
@@ -109,6 +110,9 @@ function PaymentModal({
     });
     if (data.statusCode === 200) {
       changeCartStatus("payment");
+      if (moneyDiscount) {
+        setDiscountMoney(moneyDiscount);
+      }
       Toast.show({
         type: "success",
         text1: "Đợi nhân viên xác nhận thanh toán",
@@ -333,7 +337,15 @@ function PaymentModal({
                   placeholder="Nhập số tiền muốn giảm"
                   className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-base"
                   keyboardType="numeric"
-                  onChangeText={(text) => setMoneyDiscount(Number(text))}
+                  onChangeText={(text) => {
+                    const numericValue = text.replace(/[^0-9]/g, "");
+
+                    // Loại bỏ các số 0 ở đầu
+                    const formattedValue = numericValue.replace(/^0+/, "");
+
+                    setMoneyDiscount(Number(formattedValue));
+                  }}
+                  value={moneyDiscount ? moneyDiscount.toString() : "0"}
                 />
                 <Text className="text-blue-600 text-lg">
                   Bạn được giảm giá tối đa{" "}
@@ -371,6 +383,10 @@ function PaymentModal({
             <Text className="text-red-600 text-lg">
               Số tiền giảm không được lớn hơn số tiền giảm tối đa
             </Text>
+          ) : moneyDiscount !== undefined && moneyDiscount < 0 ? (
+            <Text className="text-red-600 text-lg">
+              Số tiền giảm không hợp lệ
+            </Text>
           ) : (
             <Text className="text-2xl font-bold">
               Tổng cộng:{" "}
@@ -390,6 +406,7 @@ function PaymentModal({
           >
             <Text className="text-white font-bold text-lg">Quay lại</Text>
           </TouchableOpacity>
+
           <TouchableOpacity
             className={`bg-blue-500 py-3 px-6 rounded-md ${
               isProcessing ? "opacity-50" : ""
@@ -411,7 +428,13 @@ function PaymentModal({
               getTotalMoney() - moneyDiscount < 5000
                 ? "opacity-50"
                 : ""
-            }`}
+            }
+            ${
+              moneyDiscount !== undefined && moneyDiscount < 0
+                ? "opacity-50"
+                : ""
+            }
+            `}
             onPress={handleVnPay}
             disabled={
               isProcessing ||
@@ -421,13 +444,15 @@ function PaymentModal({
                 getTotalMoney() - moneyDiscount < 5000) ||
               (moneyDiscount !== undefined &&
                 totalMoneyDiscount !== undefined &&
-                moneyDiscount > totalMoneyDiscount)
+                moneyDiscount > totalMoneyDiscount) ||
+              (moneyDiscount !== undefined && moneyDiscount < 0)
             }
           >
             <Text className="text-white font-bold text-lg">
               Thanh toán VNPay
             </Text>
           </TouchableOpacity>
+
           <TouchableOpacity
             className={`bg-green-500 py-3 px-6 rounded-md ${
               isProcessing ? "opacity-50" : ""
@@ -444,6 +469,11 @@ function PaymentModal({
                 ? "opacity-50"
                 : ""
             }
+            ${
+              moneyDiscount !== undefined && moneyDiscount < 0
+                ? "opacity-50"
+                : ""
+            }
             `}
             onPress={handleCashPayment}
             disabled={
@@ -452,7 +482,8 @@ function PaymentModal({
                 moneyDiscount > getTotalMoney()) ||
               (moneyDiscount !== undefined &&
                 totalMoneyDiscount !== undefined &&
-                moneyDiscount > totalMoneyDiscount)
+                moneyDiscount > totalMoneyDiscount) ||
+              (moneyDiscount !== undefined && moneyDiscount < 0)
             }
           >
             <Text className="text-white font-bold text-lg">Tiền mặt</Text>

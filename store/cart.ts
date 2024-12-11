@@ -35,6 +35,9 @@ type CartStore = {
   changeOrderingStatus: (status: boolean) => void;
 
   changeNote: (note: string, id: string) => void;
+
+  discountMoney: number;
+  setDiscountMoney: (discount: number) => void;
 };
 
 export const useCartStore = create<CartStore>((set, get) => ({
@@ -283,4 +286,7 @@ export const useCartStore = create<CartStore>((set, get) => ({
       );
       return { items: [...alreadyOrderItems, ...newItems] };
     }),
+
+  discountMoney: 0,
+  setDiscountMoney: (discount) => set({ discountMoney: discount }),
 }));

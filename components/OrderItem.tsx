@@ -1,11 +1,11 @@
 import React, { useCallback, useState } from "react";
-import { View, Text, TouchableOpacity, Platform } from "react-native";
+import { View, Text, TouchableOpacity } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { TextInput } from "react-native-gesture-handler";
+// import { TextInput } from "react-native";
 import { CartItem } from "@/types";
 import { useCartStore } from "@/store";
-import { KeyboardAvoidingView } from "react-native";
 
 const blurhash =
   "|rF?hV%2WCj[ayj[a|j[az_NaeWBj@ayfRayfQfQM{M|azj[azf6fQfQfQIpWXofj[ayj[j[fQayWCoeoeaya}j[ayfQa{oLj?j[WVj[ayayj[fQoff7azayj[ayj[j[ayofayayayj[fQj[ayayj[ayfjj[j[ayjuayj[";
@@ -43,11 +43,7 @@ export default function OrderItem({ item }: { item: CartItem }) {
   );
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0}
-      className="flex flex-row items-center justify-start p-4 bg-white rounded-lg shadow-md"
-    >
+    <View className="flex flex-row items-center justify-start p-4 bg-white rounded-lg shadow-md">
       <View className="mr-4">
         <Image
           source={{
@@ -166,12 +162,13 @@ export default function OrderItem({ item }: { item: CartItem }) {
             placeholder="Thêm lời nhắn cho đầu bếp"
             className="border border-gray-300 rounded-md px-2 py-1"
             readOnly={item.itemStatus !== "idle" || isOrdering}
+            // editable={true}
             onChangeText={handleNoteChange}
             onEndEditing={(e) => handleNoteEndEditing(e)}
             value={localNote}
           />
         </View>
       </View>
-    </KeyboardAvoidingView>
+    </View>
   );
 }

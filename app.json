@@ -17,6 +17,7 @@
       "requireFullScreen": true
     },
     "android": {
+      "softwareKeyboardLayoutMode": "pan",
       "permissions": ["INTERNET"],
       "usesCleartextTraffic": true,
       "networkSecurityConfig": {

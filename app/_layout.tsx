@@ -14,7 +14,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import * as ScreenOrientation from "expo-screen-orientation";
 import { StatusBar } from "expo-status-bar";
 import Toast, { ToastConfigParams } from "react-native-toast-message";
-import { Text, View } from "react-native";
+import { KeyboardAvoidingView, Platform, Text, View } from "react-native";
 import { toastConfig } from "@/components/ToastConfig";
 import { SignalrProvider } from "@/context";
 

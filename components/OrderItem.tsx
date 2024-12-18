@@ -93,7 +93,9 @@ export default function OrderItem({ item }: { item: CartItem }) {
             <View className="flex flex-row items-center space-x-4 ">
               <View className="flex flex-row gap-2 items-center">
                 <TouchableOpacity
-                  className="bg-gray-100 rounded-full p-2 active:bg-gray-200"
+                  className={`bg-gray-100 rounded-full p-2 active:bg-gray-200 ${
+                    isOrdering ? "opacity-50" : ""
+                  }`}
                   onPress={() => {
                     if (orderStatus === "addMore") {
                       const addMoreItem = listItems
@@ -112,6 +114,7 @@ export default function OrderItem({ item }: { item: CartItem }) {
                     }
                     decreaseItemQuantity(item.id);
                   }}
+                  disabled={isOrdering}
                 >
                   <AntDesign name="minus" size={20} color="#4B5563" />
                 </TouchableOpacity>
@@ -119,7 +122,9 @@ export default function OrderItem({ item }: { item: CartItem }) {
                   {item.cartQuantity}
                 </Text>
                 <TouchableOpacity
-                  className="bg-gray-100 rounded-full p-2 active:bg-gray-200"
+                  className={`bg-gray-100 rounded-full p-2 active:bg-gray-200 ${
+                    isOrdering ? "opacity-50" : ""
+                  }`}
                   onPress={() => {
                     if (orderStatus === "addMore") {
                       increaseAddMoreItemQuantity(item.id);
@@ -127,12 +132,15 @@ export default function OrderItem({ item }: { item: CartItem }) {
                     }
                     increaseItemQuantity(item.id);
                   }}
+                  disabled={isOrdering}
                 >
                   <AntDesign name="plus" size={20} color="#4B5563" />
                 </TouchableOpacity>
               </View>
               <TouchableOpacity
-                className="bg-red-100 rounded-full p-2 ml-2 active:bg-red-200"
+                className={`bg-red-100 rounded-full p-2 ml-2 active:bg-red-200 ${
+                  isOrdering ? "opacity-50" : ""
+                }`}
                 onPress={() => {
                   if (orderStatus === "addMore") {
                     removeAddMoreItem(item.id);
@@ -140,6 +148,7 @@ export default function OrderItem({ item }: { item: CartItem }) {
                   }
                   removeItem(item.id);
                 }}
+                disabled={isOrdering}
               >
                 <AntDesign name="close" size={20} color="#EF4444" />
               </TouchableOpacity>

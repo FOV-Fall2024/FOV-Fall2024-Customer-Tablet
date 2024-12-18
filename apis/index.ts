@@ -110,7 +110,8 @@ export async function tableLogout(logoutData: {
     );
     return response.data;
   } catch (error: any) {
-    console.log(error.response.data);
+    // console.log(error.response.data);
+    return error.response.data;
   }
 }
 

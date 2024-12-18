@@ -14,6 +14,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import { useCartStore } from "@/store";
 import { SignalrContext } from "@/context";
+import Toast from "react-native-toast-message";
+import { toastConfig } from "./ToastConfig";
 
 export default function LogoutButton() {
   const { connection } = useContext(SignalrContext);
@@ -22,27 +24,34 @@ export default function LogoutButton() {
   const [employeeCode, setEmployeeCode] = useState("");
   const orderStatus = useCartStore((state) => state.cartStatus);
   const isOrdering = useCartStore((state) => state.isOrdering);
-  const { mutate, isPending } = useMutation({
+  const { mutateAsync, isPending } = useMutation({
     mutationFn: tableLogout,
   });
   const handleLogout = async () => {
     const loginData = await AsyncStorage.getItem("loginData");
     const tableId = JSON.parse(loginData!).tableId;
 
-    mutate({ id: tableId, employeeCode });
-    await AsyncStorage.removeItem("loginData");
+    const data = await mutateAsync({ id: tableId, employeeCode });
+    if (data.statusCode === 200) {
+      await AsyncStorage.removeItem("loginData");
 
-    clearCart();
-    connection?.off("ReceiveOrderDetailsStatus");
-    connection?.off("ReceiveOrderStatus");
-    connection?.off("ReceiveRefundOrderDetails");
-    connection?.off("ReceiveCancelAddMoreOrder");
-    connection?.off("ReceiveMessage");
-    connection?.off("ReceiveOrder");
+      clearCart();
+      connection?.off("ReceiveOrderDetailsStatus");
+      connection?.off("ReceiveOrderStatus");
+      connection?.off("ReceiveRefundOrderDetails");
+      connection?.off("ReceiveCancelAddMoreOrder");
+      connection?.off("ReceiveMessage");
+      connection?.off("ReceiveOrder");
 
-    setModalVisible(false);
-    setEmployeeCode("");
-    router.push("/");
+      setModalVisible(false);
+      setEmployeeCode("");
+      router.push("/");
+    } else {
+      Toast.show({
+        type: "error",
+        text1: data.message,
+      });
+    }
   };
   return (
     <>
@@ -92,6 +101,7 @@ export default function LogoutButton() {
             </View>
           </View>
         </View>
+        <Toast position="top" config={toastConfig} />
       </Modal>
     </>
   );

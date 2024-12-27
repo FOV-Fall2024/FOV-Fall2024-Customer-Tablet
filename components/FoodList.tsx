@@ -42,7 +42,7 @@ export default function FoodList({
   }
 
   return (
-    <View className="w-[60%]">
+    <View className="w-[64%]">
       <FlashList
         data={products}
         renderItem={({ item }) => {

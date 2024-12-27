@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from "react";
 import { View, Text, TouchableOpacity } from "react-native";
-import { AntDesign } from "@expo/vector-icons";
+import { AntDesign, MaterialIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { TextInput } from "react-native-gesture-handler";
 // import { TextInput } from "react-native";
@@ -44,7 +44,7 @@ export default function OrderItem({ item }: { item: CartItem }) {
 
   return (
     <View className="flex flex-row items-center justify-start p-4 bg-white rounded-lg shadow-md">
-      <View className="mr-4">
+      <View className="mr-4 relative">
         <Image
           source={{
             uri: item.image,
@@ -59,6 +59,18 @@ export default function OrderItem({ item }: { item: CartItem }) {
           <Text className="text-xs font-bold text-gray-800">
             {item.category}
           </Text>
+        </View>
+
+        <View
+          className={`absolute bottom-2 right-2 rounded-full px-1 py-1 ${
+            item.isRefundDish ? "bg-green-100" : "bg-red-100"
+          }`}
+        >
+          <MaterialIcons
+            name={item.isRefundDish ? "assignment-return" : "block"}
+            size={16}
+            color={item.isRefundDish ? "green" : "red"}
+          />
         </View>
       </View>
 

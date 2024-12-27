@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { Image } from "expo-image";
-import { AntDesign } from "@expo/vector-icons";
+import { AntDesign, MaterialIcons } from "@expo/vector-icons";
 import { Food } from "@/types";
 import { useCartStore } from "@/store";
 
@@ -45,12 +45,26 @@ export default function FoodCard({
       />
       <View className="p-4">
         <Text
-          className="text-xl font-bold text-gray-800 mb-8"
+          className="text-xl font-bold text-gray-800 mb-2"
           numberOfLines={1}
           ellipsizeMode="tail"
         >
           {name}
         </Text>
+
+        <View className="flex-row items-center mb-8">
+          <MaterialIcons
+            name={isRefundDish ? "assignment-return" : "block"}
+            size={16}
+            color={isRefundDish ? "green" : "red"}
+          />
+          <Text className="ml-1 text-sm text-gray-600">
+            {isRefundDish
+              ? "Có thể trả lại khi thanh toán"
+              : "Không thể trả lại khi thanh toán"}
+          </Text>
+        </View>
+
         <View className="flex-row items-center justify-between ">
           <View>
             <Text className="text-lg font-semibold text-green-600">

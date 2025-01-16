@@ -187,11 +187,12 @@ export const useCartStore = create<CartStore>((set, get) => ({
     set((state) => {
       const newItems = [];
       let isUpdated = false;
+      // !isUpdated &&
       for (let i of state.items) {
         if (!isUpdated && i.id === itemId && quantity <= i.cartQuantity) {
           newItems.push({ ...i, cartQuantity: i.cartQuantity - quantity });
           isUpdated = true;
-        } else if (i.cartQuantity > 0) {
+        } else if (i.cartQuantity >= 0) {
           newItems.push(i);
         }
       }

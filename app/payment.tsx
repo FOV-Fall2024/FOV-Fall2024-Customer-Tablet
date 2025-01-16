@@ -67,6 +67,12 @@ export default function Payment() {
                 text1: "Thanh toán thành công",
               });
             } else {
+              connection?.off("ReceiveOrderDetailsStatus");
+              connection?.off("ReceiveOrderStatus");
+              connection?.off("ReceiveRefundOrderDetails");
+              connection?.off("ReceiveCancelAddMoreOrder");
+              connection?.off("ReceiveMessage");
+              connection?.off("ReceiveOrder");
               Toast.show({
                 type: "error",
                 text1: "Thanh toán thất bại",
